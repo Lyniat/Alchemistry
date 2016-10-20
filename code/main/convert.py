@@ -1,6 +1,10 @@
 import math
+import sys
 from PIL import Image
-im = Image.open("fireflies.png")
+
+filename = str(sys.argv[1])
+print(filename)
+im = Image.open(filename)
 pix = im.load()
 print (im.size)
 
@@ -75,5 +79,5 @@ print("result: "+str(byte_str))
 
 
 with open("main.ino", "a") as f:
-    text = "uint8_t picture_fireflies[] = {"+byte_str+"};"
+    text = "uint8_t picture_"+filename+"[] = {"+byte_str+"};"
     f.write(text)

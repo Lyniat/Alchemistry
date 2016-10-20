@@ -9,15 +9,17 @@
 #define __ 255
 #define SIZE 8
 #define QUEUE 10
+#define VANISH_TIME 200
 
 uint8_t picture_flower[] = {0,0,0,0,0,0,0,0,0,0,0,0,0,82,255,0,0,0,0,82,255,0,0,0,0,0,0,0,0,0,255,0,50,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,82,255,0,255,0,0,82,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,255,0,0,0,0};
 uint8_t picture_rainbow[] = {0,0,0,0,0,0,255,0,50,255,0,50,255,0,50,255,91,0,255,91,0,255,0,50,255,0,50,255,91,0,255,255,0,255,255,0,255,91,0,255,0,50,255,0,50,255,91,0,255,255,0,0,255,0,0,255,0,255,255,0,255,91,0,255,0,50,255,91,0,255,255,0,0,255,0,0,82,255,0,82,255,0,255,0,255,255,0,255,91,0,255,255,0,0,255,0,0,82,255,255,0,255,255,0,255,0,82,255,0,255,0,255,255,0,0,82,255,255,0,255,0,0,0,0,0,0,255,0,255,0,82,255};
 uint8_t picture_thunder[] = {63,63,116,63,63,116,91,110,225,91,110,225,99,155,255,99,155,255,99,155,255,99,155,255,0,0,0,0,0,0,0,0,0,0,0,0,251,242,54,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,251,242,54,251,242,54,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,251,242,54,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,251,242,54,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,251,242,54,0,0,0,0,0,0};
 uint8_t picture_fireflies[] = {0,0,0,0,0,0,192,229,0,0,0,0,0,0,0,0,0,0,0,0,0,192,229,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,192,229,0,0,0,0,192,229,0,0,0,0,192,229,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,192,229,0,0,0,0,192,229,0,0,0,0,0,0,0,0,0,0,192,229,0,0,0,0,0,0,0,0,0,0,0,0,0,192,229,0,0,0,0,0,0,0,0,0,0};
+uint8_t picture_water[] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,85,85,170,170,170,255,170,170,255,85,85,170,85,85,170,170,170,255,170,170,255,170,170,255,85,85,170,85,85,170,170,170,255,170,170,255,85,85,170,85,85,170,85,85,170,85,85,170,170,170,255,170,170,255,85,85,170,85,85,170,170,170,255,170,170,255,170,170,255,170,170,255,85,85,170,85,85,170,170,170,255,170,170,255,85,85,170,85,85,170,85,85,170,170,170,255,170,170,255,85,85,170,85,85,170,170,170,255};
 
 int counter = 0;
 
-int glowIntensity = 0;
+uint16_t glowIntensity = 0;
 
 uint16_t mixedElementsNum = 0;
 
@@ -28,6 +30,8 @@ int totalyMixed = 0;
 boolean glowing = true;
 
 int vanishCounter = 0;
+
+int glowIncreaseDirection = 1;
 
 uint32_t colors[5];
 
@@ -184,28 +188,23 @@ int actualElementNum = 0;
 
 void glow(){
 
-  int actualIntensity = glowIntensity;
+  glowIntensity += glowIncreaseDirection;
 
-  if(glowIntensity > 255){
-    actualIntensity = 255- glowIntensity;
+  if(glowIntensity >= 1023 || glowIntensity <= 0){
+    glowIncreaseDirection *= -1;
   }
   
   for(int i = 0; i < N_LEDS; i++){
-     uint32_t c = strip.Color(actualIntensity/2, actualIntensity/2, actualIntensity/2);
+     uint32_t c = strip.Color(glowIntensity/8, glowIntensity/8, glowIntensity/8);
      strip.setPixelColor(i , c);
   }
-  glowIntensity++;
-  if(glowIntensity > 255*2){
-    glowIntensity = 0;
-  }
-  strip.show();
 
-  //delay(5);
+  strip.show();
 }
 
 void vanish(){
   while(true){
-    if(vanishCounter > 200){
+    if(vanishCounter > VANISH_TIME){
       softwareReset();
     }
     
@@ -214,12 +213,6 @@ void vanish(){
       int r = random(0,8);
       if(r < 1){
         c = strip.Color(255, 0, 0);
-      }else if(r > 1 && r < 2){
-        c = strip.Color(0, 255, 0);
-       }else if(r > 2 && r < 3){
-        c = strip.Color(0, 0, 255);
-      }else{
-        c = strip.Color(0, 0, 0);
       }
       strip.setPixelColor(i , c);
     }
@@ -328,8 +321,8 @@ void renderColors(Drop* drop) {
   int y = drop->y;
   float counter = 50.0;
 
-  for (int i = -1; i <= 1; i++) { // ANDI: changed < to <=
-    for (int j = -1; j <= 1; j++) { // ANDI: changed < to <=
+  for (int i = -1; i <= 1; i++) {
+    for (int j = -1; j <= 1; j++) {
       int newX = x + i;
       int newY = y + j;
       if (newX >= 0 && newX < SIZE) {
@@ -372,8 +365,6 @@ void setup() {
       drops[x][y] = NULL;
     }
   }
-
-  //showPicture();
 }
 
 void updateColors(Drop* drop) {
@@ -428,16 +419,12 @@ void showPicture(uint8_t picture[]){
       int b = rgb[2];
       uint32_t c = strip.Color(r, g, b);
       strip.setPixelColor(ledNum  , c);
-
-      //counter++;
     }
   }
 
   strip.show();
 
   delay(5000);
-
-  //softwareReset();
 
   vanish();
 }
@@ -451,21 +438,8 @@ void resetLEDs(){
 }
 
 void readSerial(){
-  // send data only when you receive data:
   if (Serial1.available() > 0) {
-      //Serial.println("available!");
-          // read the incoming byte:
           String incomingByte = Serial1.readString();
-
-          /*
-          if(incomingByte > 0){
-            Serial.println("received");
-          }
-          */
-
-          // say what you got:
-          //Serial.print("I received: ");
-          //Serial.println(incomingByte);
 
           Element* element = findElement(incomingByte);
           if(element != NULL){
@@ -481,8 +455,6 @@ Element* findElement(String id){
   for(int i = 0; i < 5; i++){
     Element* element = allElements[i];
     String actualId = element->get_id();
-    //Serial.print("trying: ");
-    //Serial.println(actualId);
     if(actualId.equals(id)){
       activeFilling = true;
       return element;
@@ -495,9 +467,6 @@ void combine(){
   if(totalyMixed < 3){
     return;
   }
-
-  //Serial.print("combined: ");
-  //Serial.println(mixedElementsNum);
 
   if(mixedElementsNum == 321){
     showPicture(picture_flower);
@@ -528,12 +497,10 @@ void loop() {
     readSerial();
   }
 
-/*
   if(glowing){
     glow();
     return;
   }
-  */
 
     if(actualElementNum > 0){
       int x = 0;
@@ -592,9 +559,7 @@ void loop() {
         }
       }
       strip.show();
-      //delay(100);
     }
-  //}
 
 }
 
