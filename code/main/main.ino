@@ -11,6 +11,9 @@
 #define QUEUE 10
 #define VANISH_TIME 200
 
+/*
+ * The pictures converted by the python script
+ */
 uint8_t picture_flower[] = {0,0,0,0,0,0,0,0,0,0,0,0,0,82,255,0,0,0,0,82,255,0,0,0,0,0,0,0,0,0,255,0,50,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,82,255,0,255,0,0,82,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,0,0,255,0,0,0,0};
 uint8_t picture_rainbow[] = {0,0,0,0,0,0,255,0,50,255,0,50,255,0,50,255,91,0,255,91,0,255,0,50,255,0,50,255,91,0,255,255,0,255,255,0,255,91,0,255,0,50,255,0,50,255,91,0,255,255,0,0,255,0,0,255,0,255,255,0,255,91,0,255,0,50,255,91,0,255,255,0,0,255,0,0,82,255,0,82,255,0,255,0,255,255,0,255,91,0,255,255,0,0,255,0,0,82,255,255,0,255,255,0,255,0,82,255,0,255,0,255,255,0,0,82,255,255,0,255,0,0,0,0,0,0,255,0,255,0,82,255};
 uint8_t picture_thunder[] = {63,63,116,63,63,116,91,110,225,91,110,225,99,155,255,99,155,255,99,155,255,99,155,255,0,0,0,0,0,0,0,0,0,0,0,0,251,242,54,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,251,242,54,251,242,54,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,251,242,54,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,251,242,54,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,251,242,54,0,0,0,0,0,0};
@@ -35,6 +38,9 @@ int glowIncreaseDirection = 1;
 
 uint32_t colors[5];
 
+/*
+ * Superclass from which other classes will inherit
+ */
 class Element {
   public:
     virtual int get_r() = 0;
@@ -87,6 +93,9 @@ class Water : public Element{
     boolean used = false;
 };
 
+/*
+ * "Soil" in code but later renamed to "Life"
+ */
 class Soil : public Element{
    public:
     int get_r() { return color_r;};
@@ -147,10 +156,17 @@ class Lightning : public Element{
     boolean used = false;
 };
 
+/*
+ * Every element must be registered here to work
+ */
 Element* allElements[]  = {new Fire(),new Water(),new Soil(), new Air(), new Lightning()};
 
 boolean activeFilling = false;
 
+
+/*
+ * Matrix where every led has ist own id
+ */
 static int leds [SIZE][SIZE] = {
   {__, __, __, 14, 29, __, __, __},
   {__, __, __, 15, 28, __, __, __},
@@ -162,6 +178,9 @@ static int leds [SIZE][SIZE] = {
   {__, 7, 8, 21, 22, 35, 36, __}
 };
 
+/*
+ * Drop struct which is used for fluid simulation
+ */
 struct Drop {
   public:
     int x;
@@ -180,12 +199,19 @@ struct Drop {
 
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(N_LEDS, PIN_LED, NEO_GRB + NEO_KHZ800);
 
-static Drop* drops[SIZE][SIZE];
+
+/*
+ * Drop array where drops are stored
+ */
+Drop* drops[SIZE][SIZE];
 
 Element* actualElement;
 
 int actualElementNum = 0;
 
+/*
+ * Standby glow effect
+ */
 void glow(){
 
   glowIntensity += glowIncreaseDirection;
@@ -202,6 +228,9 @@ void glow(){
   strip.show();
 }
 
+/*
+ * Creates a fire effect
+ */
 void vanish(){
   while(true){
     if(vanishCounter > VANISH_TIME){
@@ -223,6 +252,9 @@ void vanish(){
   }
 }
 
+/*
+ * Is called on every drop every update
+ */
 void render(Drop* drop) {
   if (drop->rendered) {
     return;
@@ -244,6 +276,9 @@ void render(Drop* drop) {
   renderColors(drop);
 }
 
+/*
+ * Is called if a drop tries to push another away to fall down
+ */
 void push(Drop* drop) {
   if (drop->rendered) {
     return;
@@ -266,6 +301,9 @@ void push(Drop* drop) {
 
 }
 
+/*
+ * Tries to push the drop to the left
+ */
 void pushLeft(Drop* drop) {
   int x = drop->x;
   int y = drop->y;
@@ -290,6 +328,10 @@ void pushLeft(Drop* drop) {
   pushRight(drop);
 }
 
+
+/*
+ * Tries to push the drop to the right
+ */
 void pushRight(Drop* drop) {
   int x = drop->x;
   int y = drop->y;
@@ -313,6 +355,9 @@ void pushRight(Drop* drop) {
   pushLeft(drop);
 }
 
+/*
+ * Is called for every drop every update
+ */
 void renderColors(Drop* drop) {
   float r = drop->color_r * 50;
   float g = drop->color_g * 50;
@@ -382,6 +427,10 @@ void updateColors(Drop* drop) {
   }
 }
 
+
+/*
+ * Creates 10 new drops with the given element
+ */
 void fill(Element* element) {
   if(element->get_used()){
     return;
@@ -394,6 +443,9 @@ void fill(Element* element) {
   totalyMixed++;
 }
 
+/*
+ * Shows given picture for 5 seconds and then calls vanish()
+ */
 void showPicture(uint8_t picture[]){
   resetLEDs();
   Serial.println("showing picture");
@@ -429,6 +481,9 @@ void showPicture(uint8_t picture[]){
   vanish();
 }
 
+/*
+ * Turn every LED off
+ */
 void resetLEDs(){
   for(int i = 0; i < N_LEDS; i++){
     uint32_t c = strip.Color(0, 0, 0);
@@ -437,6 +492,10 @@ void resetLEDs(){
   }
 }
 
+
+/*
+ * Read input drom RFID chip
+ */
 void readSerial(){
   if (Serial1.available() > 0) {
           String incomingByte = Serial1.readString();
@@ -451,6 +510,10 @@ void readSerial(){
   }
 }
 
+
+/*
+ * Returns the element with the given ID
+ */
 Element* findElement(String id){
   for(int i = 0; i < 5; i++){
     Element* element = allElements[i];
@@ -463,6 +526,9 @@ Element* findElement(String id){
   return NULL;
 }
 
+/*
+ * If 3 elements are combined, this function will check if it is a valid combination and show a picture
+ */
 void combine(){
   if(totalyMixed < 3){
     return;
@@ -478,17 +544,18 @@ void combine(){
     showPicture(picture_fireflies);
   }else{
     delay(5000);
-    //softwareReset();
     vanish();
   }
 }
 
 void loop() {
+  // Checks if reset is pulled
   int input = digitalRead(PIN_RESET); 
   if(input != 0){
     vanish();
   }
 
+  
   if(!rendering){
     return;
   }
@@ -502,6 +569,7 @@ void loop() {
     return;
   }
 
+    // creates new elements
     if(actualElementNum > 0){
       int x = 0;
       int y = 3 + actualElementNum%2;
@@ -519,6 +587,7 @@ void loop() {
     }
 
 
+    //renders every drop
     for (byte x = 0; x < SIZE; x++) {
       for (byte y = 0; y < SIZE; y++) {
         if (leds[x][y] != __) {
@@ -529,6 +598,7 @@ void loop() {
         }
       }
 
+      //updates the color for every drop
       for (byte x = 0; x < SIZE; x++) {
         for (byte y = 0; y < SIZE; y++) {
           if (leds[x][y] != __) {
@@ -546,6 +616,7 @@ void loop() {
         }
 
 
+        //sets the color for the LEDs
         for (byte x = 0; x < SIZE; x++) {
           for (byte y = 0; y < SIZE; y++) {
             int c = strip.Color(0, 0, 0);
